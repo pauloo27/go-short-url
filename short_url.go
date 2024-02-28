@@ -7,12 +7,9 @@ import (
 	"net/http"
 )
 
-var (
-	httpClient *http.Client
-)
-
 type URLShortener struct {
-	baseURL string
+	baseURL    string
+	httpClient *http.Client
 }
 
 type ShortURL struct {
@@ -28,7 +25,17 @@ type ShortURLList struct {
 }
 
 func NewURLShortener(baseURL string) *URLShortener {
-	return &URLShortener{baseURL: baseURL}
+	// the default client will follow redirects
+	httpClient := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	return &URLShortener{
+		baseURL:    baseURL,
+		httpClient: httpClient,
+	}
 }
 
 func (s *URLShortener) Shorten(url string) (*ShortURL, error) {
@@ -54,7 +61,7 @@ func (s *URLShortener) doShort(url string, alias *string) (*ShortURL, error) {
 		return nil, err
 	}
 
-	res, err := http.Post(uri, "application/json", bytes.NewBuffer(encodedBody))
+	res, err := s.httpClient.Post(uri, "application/json", bytes.NewBuffer(encodedBody))
 	if err != nil {
 		return nil, err
 	}
@@ -73,17 +80,8 @@ func (s *URLShortener) doShort(url string, alias *string) (*ShortURL, error) {
 }
 
 func (s *URLShortener) GetURL(alias string) (url string, err error) {
-	// the default client will follow redirects
-	if httpClient == nil {
-		httpClient = &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-	}
-
 	uri := fmt.Sprintf("%s/urls/%s", s.baseURL, alias)
-	res, err := httpClient.Get(uri)
+	res, err := s.httpClient.Get(uri)
 	if err != nil {
 		return "", err
 	}
@@ -101,7 +99,7 @@ func (s *URLShortener) GetURL(alias string) (url string, err error) {
 
 func (s *URLShortener) GetMostAccessedURLs(limit int) (*ShortURLList, error) {
 	uri := fmt.Sprintf("%s/urls?limit=%d", s.baseURL, limit)
-	res, err := http.Get(uri)
+	res, err := s.httpClient.Get(uri)
 	if err != nil {
 		return nil, err
 	}
