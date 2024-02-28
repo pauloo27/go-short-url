@@ -21,14 +21,14 @@ func TestMain(m *testing.M) {
 func TestURLShortener_ShortenWithAlias(t *testing.T) {
 	alias, err := gonanoid.Generate(string(aliasAlphabet), 8)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	url := "https://example.com"
 
 	shortURL, err := urlShortener.ShortenWithAlias(url, alias)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	if shortURL.Alias != alias {
@@ -45,7 +45,7 @@ func TestURLShortener_Shorten(t *testing.T) {
 
 	shortURL, err := urlShortener.Shorten(url)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	if shortURL.Alias == "" {
@@ -62,12 +62,12 @@ func TestURLShortener_GetURL(t *testing.T) {
 
 	shortURL, err := urlShortener.Shorten(url)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	redirectURL, err := urlShortener.GetURL(shortURL.Alias)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	if redirectURL != url {
@@ -78,7 +78,7 @@ func TestURLShortener_GetURL(t *testing.T) {
 func TestURLShortener_GetMostAccessedURLs(t *testing.T) {
 	urls, err := urlShortener.GetMostAccessedURLs(5)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	if urls.Limit != 5 {
